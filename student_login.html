@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HostelCare</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+    <!-- Navbar -->
+    <nav class="top-navbar">
+        <div class="sidebar-logo" style="margin: 0;">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            HostelCare
+        </div>
+        <div class="nav-links">
+            <a href="#" onclick="alert('Navigating to Home')">Home</a>
+            <a href="#" onclick="alert('Navigating to Support')">Support</a>
+            <a href="#" onclick="alert('Navigating to Contact Admin')">Contact Admin</a>
+            <a href="#" onclick="switchRole('staff')" id="staffLink">Staff Login</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="login-main">
+        <div class="card login-card" style="box-shadow: var(--shadow-lg);">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700;" id="formTitle">Student Portal</h2>
+                <p class="text-muted text-sm mt-2">Access your hostel dashboard</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">College ID / Username</label>
+                    <input type="text" class="form-control" id="userId" placeholder="Enter your ID" required value="ST-001">
+                </div>
+                
+                <div class="form-group" id="blockGroup">
+                    <label class="form-label">Hostel Block</label>
+                    <select class="form-control" id="hostelBlock">
+                        <option value="Block A">Block A</option>
+                        <option value="Block B">Block B</option>
+                        <option value="Block C">Block C</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="roomGroup">
+                    <label class="form-label">Room Number</label>
+                    <input type="text" class="form-control" id="roomNo" placeholder="e.g. 302" required value="A-302">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label mb-2 flex justify-between">
+                        <span>Password</span>
+                        <a href="#" class="text-sm" onclick="alert('Redirecting to Password Recovery')">Forgot password?</a>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="password" class="form-control" id="password" required value="password">
+                        <span style="position: absolute; right: 10px; top: 10px; cursor: pointer; color: var(--text-muted);" onclick="togglePassword()">
+                            👁️
+                        </span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full" style="padding: 0.75rem; font-size: 1rem; margin-top: 1rem;">
+                    Sign In
+                </button>
+                
+                <div style="text-align: center; margin-top: 1.5rem; display: none;" id="adminLinkDiv">
+                    <a href="#" class="text-sm text-muted" onclick="switchRole('admin')">Access Admin Panel Instead</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 HostelCare Management System. All rights reserved.</p>
+        <div class="flex" style="justify-content: center; gap: 1rem; margin-top: 0.5rem;">
+            <a href="#" class="text-sm text-muted" onclick="alert('Help page opened')">Help Center</a>
+            <a href="#" class="text-sm text-muted" onclick="alert('Privacy policy opened')">Privacy Policy</a>
+            <a href="#" class="text-sm text-muted" onclick="alert('Terms of Service opened')">Terms of Service</a>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        let currentRole = 'student';
+
+        function switchRole(role) {
+            currentRole = role;
+            const idInput = document.getElementById('userId');
+            const roomGroup = document.getElementById('roomGroup');
+            const blockGroup = document.getElementById('blockGroup');
+            const title = document.getElementById('formTitle');
+            const staffLink = document.getElementById('staffLink');
+            const adminLinkDiv = document.getElementById('adminLinkDiv');
+
+            if(role === 'student') {
+                title.textContent = 'Student Portal';
+                idInput.value = 'ST-001';
+                roomGroup.style.display = 'block';
+                blockGroup.style.display = 'block';
+                staffLink.textContent = 'Staff Login';
+                staffLink.setAttribute('onclick', "switchRole('staff')");
+                adminLinkDiv.style.display = 'none';
+            } else if(role === 'staff') {
+                title.textContent = 'Staff Portal';
+                idInput.value = 'SF-001';
+                roomGroup.style.display = 'none';
+                blockGroup.style.display = 'none';
+                staffLink.textContent = 'Student Login';
+                staffLink.setAttribute('onclick', "switchRole('student')");
+                adminLinkDiv.style.display = 'block';
+            } else if(role === 'admin') {
+                title.textContent = 'Admin Portal';
+                idInput.value = 'AD-001';
+                roomGroup.style.display = 'none';
+                blockGroup.style.display = 'none';
+                adminLinkDiv.style.display = 'none';
+                staffLink.textContent = 'Student Login';
+                staffLink.setAttribute('onclick', "switchRole('student')");
+            }
+        }
+
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            pwd.type = pwd.type === 'password' ? 'text' : 'password';
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('userId').value;
+            const room = document.getElementById('roomNo') ? document.getElementById('roomNo').value : null;
+            loginUser(currentRole, id, room);
+        }
+        
+        // Auto-redirect
+        const user = getCurrentUser();
+        if (user) {
+            if(user.role === 'student') window.location.href = 'student_dashboard.html';
+            else if(user.role === 'staff') window.location.href = 'staff_dashboard.html';
+            else if(user.role === 'admin') window.location.href = 'admin_management_panel.html';
+        }
+    </script>
+</body>
+</html>

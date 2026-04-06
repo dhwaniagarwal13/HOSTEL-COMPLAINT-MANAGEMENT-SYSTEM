@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - HostelCare</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">HostelCare <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.5rem;">STAFF</span></div>
+            
+            <div style="margin-bottom: 2rem;">
+                <div class="text-xs font-medium text-muted mb-2 px-4" style="text-transform: uppercase;">Menu</div>
+                <a href="staff_dashboard.html" class="nav-link active">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Viewing Work Orders')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    Work Orders
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Viewing Task History')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Task History
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Viewing Staff Analytics')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Analytics
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Opening Settings')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+                    Settings
+                </a>
+            </div>
+
+            <div style="margin-top: auto;">
+                <button class="nav-link" style="width: 100%; border: none; background: transparent; text-align: left; color: var(--danger);" onclick="logout()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h1>Staff Dashboard</h1>
+                    <p class="text-muted text-sm mt-1">Hello, <span id="userName">Staff Member</span>. You have <span id="notifCount" style="color: var(--primary); font-weight: bold;">3</span> new updates.</p>
+                </div>
+                <div class="flex gap-4 align-center">
+                    <button class="btn btn-secondary" onclick="alert('Notification Center Opened')">🔔</button>
+                    <button class="btn btn-primary" onclick="alert('Report generator opened')">New Report</button>
+                    <div class="avatar" style="background-color: var(--success);">SF</div>
+                </div>
+            </div>
+
+            <div class="grid-cards">
+                <div class="card stat-card">
+                    <span class="stat-title">Assigned Complaints</span>
+                    <span class="stat-value" id="assignedCount">0</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-title">Extreme Urgency</span>
+                    <span class="stat-value" style="color: var(--danger);" id="extremeCount">0</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-title">Due Today / Urgent</span>
+                    <span class="stat-value" style="color: var(--warning);">2</span>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                
+                <!-- Main Task Table -->
+                <div class="card" style="grid-column: span 2;">
+                    <div class="flex justify-between align-center mb-6" style="flex-wrap: wrap; gap: 1rem;">
+                        <h2 style="font-size: 1.125rem; font-weight: 600;">Work Queue</h2>
+                        <div class="flex gap-2">
+                            <div class="search-bar-container" style="width: 200px;">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search..." onkeyup="filterData()" style="padding-left: 1rem;">
+                            </div>
+                            <select class="form-control" id="catFilter" onchange="filterData()" style="width: auto;">
+                                <option value="All">All Categories</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Electrical">Electrical</option>
+                            </select>
+                            <select class="form-control" id="urgencyFilter" onchange="filterData()" style="width: auto;">
+                                <option value="All">All Urgencies</option>
+                                <option value="Extreme">Extreme</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Mild">Mild</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Category</th>
+                                    <th>Location</th>
+                                    <th>Urgency</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="queueTableBody">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Side Widget -->
+                <div class="flex" style="flex-direction: column; gap: 1.5rem;">
+                    
+                    <div class="card">
+                        <h3 class="form-label" style="font-size: 1rem;">Recent Updates Timeline</h3>
+                        <div class="timeline mt-4" id="recentTimeline">
+                            <!-- JS Populated -->
+                            <div class="timeline-item">
+                                <div class="timeline-date">10:45 AM</div>
+                                <div class="timeline-content">CMP-002 was marked as Assigned.</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-date">Yesterday</div>
+                                <div class="timeline-content">System maintenance completed in Block A.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="background: linear-gradient(135deg, rgba(108, 92, 231, 0.2) 0%, var(--card-bg) 100%); border-color: var(--primary);">
+                        <h3 class="form-label" style="font-size: 1rem; color: var(--primary-hover);">Maintenance Tip</h3>
+                        <p class="text-sm mt-2" style="color: var(--text-main);">Always ensure safety breakers are off during plumbing actions near electrical sockets.</p>
+                        <button class="btn btn-secondary mt-4 w-full" onclick="alert('Viewing manual...')">View Staff Manual</button>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        requireAuth(['staff']);
+        const user = getCurrentUser();
+        document.getElementById('userName').textContent = user.name;
+        
+        let allComplaints = [];
+
+        function loadData() {
+            allComplaints = getComplaints();
+            // We can show all complaints or just Assigned/In Progress.
+            // Let's show all for demo.
+            
+            document.getElementById('assignedCount').textContent = allComplaints.filter(c => c.status === 'Assigned' || c.status === 'In Progress').length;
+            document.getElementById('extremeCount').textContent = allComplaints.filter(c => c.urgency === 'Extreme' && c.status !== 'Resolved').length;
+
+            renderTable(allComplaints);
+        }
+
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const urg = document.getElementById('urgencyFilter').value;
+            const cat = document.getElementById('catFilter').value;
+            
+            let filtered = allComplaints;
+
+            if (term) filtered = filtered.filter(c => c.id.toLowerCase().includes(term) || c.location.toLowerCase().includes(term));
+            if (urg !== 'All') filtered = filtered.filter(c => c.urgency === urg);
+            if (cat !== 'All') filtered = filtered.filter(c => c.category === cat);
+            
+            renderTable(filtered);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('queueTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No complaints found.</td></tr>';
+                return;
+            }
+
+            data.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-medium">${c.id}</td>
+                    <td>${c.category}</td>
+                    <td>${c.location}</td>
+                    <td>${getUrgencyBadge(c.urgency)}</td>
+                    <td>${getStatusBadge(c.status)}</td>
+                    <td>
+                        <button class="btn btn-secondary text-sm" style="padding: 0.25rem 0.5rem;" onclick="viewDetails('${c.id}')">Action →</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function viewDetails(id) {
+            window.location.href = `complaint_details_staff.html?id=${id}`;
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

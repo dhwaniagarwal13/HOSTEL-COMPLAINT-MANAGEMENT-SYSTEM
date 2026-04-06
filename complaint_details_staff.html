@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Workspace - Staff</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body style="background-color: var(--bg-color);">
+    <!-- We will use a header navigation approach for this workspace view for max space -->
+    <nav class="top-navbar">
+        <div class="sidebar-logo" style="margin: 0; font-size: 1.125rem;">
+            HostelCare <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.5rem;">WORK ORDER</span>
+        </div>
+        <div class="nav-links">
+            <button class="btn btn-secondary" onclick="window.history.back()">← Return to Queue</button>
+            <div class="avatar" style="width: 32px; height: 32px; background: var(--success);">SF</div>
+        </div>
+    </nav>
+
+    <div class="app-container" style="min-height: calc(100vh - 65px);">
+        <main class="main-content" style="max-width: 1400px; margin: 0 auto; padding-top: 2rem;">
+            
+            <div class="flex justify-between align-center mb-6">
+                <div>
+                    <h1 style="font-size: 1.5rem; font-weight: 700;" id="orderTitle">Loading...</h1>
+                    <div class="text-sm text-muted mt-1" id="orderSubtitle">ID: ...</div>
+                </div>
+                <div class="flex gap-2" id="headerBadges">
+                    <!-- Badges -->
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <!-- LEfT PANEL: Overview & Info -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <div class="card">
+                        <h3 class="form-label" style="font-size: 1rem;">Issue Description</h3>
+                        <p id="descText" style="white-space: pre-wrap; font-size: 0.95rem; margin-top: 0.5rem;"></p>
+                        
+                        <div id="galleryBox" style="display: none; margin-top: 1.5rem;">
+                            <h4 class="form-label text-sm text-muted">Field Images</h4>
+                            <div class="grid-cards" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 0;">
+                                <img id="complaintImg" src="" style="width: 100%; height: 150px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Client / Location -->
+                    <div class="card flex" style="gap: 2rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <h3 class="form-label text-sm text-muted mb-2 text-uppercase" style="letter-spacing: 0.05em;">Location Map</h3>
+                            <div class="map-preview mb-2" title="Mock Location Map"></div>
+                            <div class="font-medium" id="locText" style="font-size: 0.95rem;">-</div>
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <h3 class="form-label text-sm text-muted mb-2 text-uppercase" style="letter-spacing: 0.05em;">Reporter</h3>
+                            <div class="assigned-staff-card" style="margin-bottom: 1rem; border: none; padding: 0; background: transparent;">
+                                <div class="avatar" id="studentAvatar" style="background: var(--primary);"></div>
+                                <div style="flex: 1;">
+                                    <div class="font-medium" id="studentName">Student Name</div>
+                                    <div class="text-sm text-muted" id="studentRm">Room</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary w-full" onclick="alert('Messaging system opened via modal')">Direct Message Student</button>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="card">
+                        <h3 class="form-label" style="font-size: 1rem; margin-bottom: 1.5rem;">Audit Timeline</h3>
+                        <div class="timeline" id="timelineList">
+                            <!-- Populated JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT PANEL: Actions -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <div class="card" style="box-shadow: var(--shadow-md); border-top: 4px solid var(--primary);">
+                        <h3 class="form-label mb-4" style="font-size: 1.125rem;">Quick Actions</h3>
+                        <div class="flex" style="flex-direction: column; gap: 0.75rem;">
+                            <button class="btn btn-secondary text-left flex justify-between align-center" onclick="updateWork('Assigned')">
+                                <span>1. Acknowledge / Accept</span>
+                                <span>📋</span>
+                            </button>
+                            <button class="btn btn-primary text-left flex justify-between align-center" onclick="updateWork('In Progress')" style="background: var(--info);">
+                                <span>2. Mark In Progress</span>
+                                <span>⏳</span>
+                            </button>
+                            <button class="btn btn-primary text-left flex justify-between align-center" onclick="updateWork('Resolved')" style="background: var(--success);">
+                                <span>3. Resolve Full Ticket</span>
+                                <span>✅</span>
+                            </button>
+                        </div>
+
+                        <div class="mt-6 border-t pt-4" style="border-top: 1px solid var(--border-color);">
+                            <label class="form-label">Add Note / Update Log</label>
+                            <textarea class="form-control mb-2" id="actionNote" placeholder="E.g. Waiting for spare parts..."></textarea>
+                            <button class="btn btn-secondary w-full" onclick="postNote()">Save to Timeline</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="form-label" style="font-size: 1rem; margin-bottom: 1rem;">Internal Support Chat</h3>
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chatBox"></div>
+                            <div class="chat-input-area border-t pt-3 mt-auto">
+                                <input type="text" class="form-control" placeholder="Message student or admin..." id="msgInput" onkeypress="handleChatEnter(event)">
+                                <button class="btn btn-primary" onclick="sendChat()">Send</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        requireAuth(['staff', 'admin']);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const complaintId = urlParams.get('id');
+        let complaint = null;
+
+        function loadData() {
+            if (!complaintId) { alert("Missing ID"); window.location.href = 'staff_dashboard.html'; return; }
+            complaint = getComplaintById(complaintId);
+            if (!complaint) { alert("Complaint not found."); window.location.href = 'staff_dashboard.html'; return; }
+
+            document.getElementById('orderTitle').textContent = complaint.title;
+            document.getElementById('orderSubtitle').textContent = `ID: ${complaint.id} • ${complaint.category}`;
+            document.getElementById('headerBadges').innerHTML = `${getStatusBadge(complaint.status)} ${getUrgencyBadge(complaint.urgency)}`;
+            
+            document.getElementById('descText').textContent = complaint.description;
+            if (complaint.image) {
+                document.getElementById('galleryBox').style.display = 'block';
+                document.getElementById('complaintImg').src = complaint.image;
+            }
+
+            document.getElementById('locText').innerHTML = `<strong>${complaint.location}</strong><br><span class="text-sm text-muted">Nearest Landmark: Block Entrance</span>`;
+            document.getElementById('studentAvatar').textContent = complaint.studentName.charAt(0);
+            document.getElementById('studentName').textContent = complaint.studentName;
+            document.getElementById('studentRm').textContent = `Room: ${complaint.roomNo} | ID: ${complaint.studentId}`;
+            
+            // Timeline
+            const tBody = document.getElementById('timelineList');
+            tBody.innerHTML = '';
+            (complaint.timeline || []).forEach(t => {
+                tBody.innerHTML += `
+                    <div class="timeline-item">
+                        <div class="timeline-date">${formatDate(t.date)}</div>
+                        <div class="timeline-content"><span class="font-medium">${t.status}</span> - ${t.note}</div>
+                    </div>
+                `;
+            });
+            
+            renderChat();
+        }
+
+        function updateWork(newStatus) {
+            if(!confirm(`Update status to ${newStatus}?`)) return;
+            const note = document.getElementById('actionNote').value.trim() || `Status changed to ${newStatus} by Staff.`;
+            addTimelineEvent(complaintId, newStatus, note);
+            document.getElementById('actionNote').value = '';
+            loadData();
+        }
+
+        function postNote() {
+            const note = document.getElementById('actionNote').value.trim();
+            if(!note) return alert("Write a note first.");
+            addTimelineEvent(complaintId, complaint.status, note);
+            document.getElementById('actionNote').value = '';
+            alert("Note added to timeline.");
+            loadData();
+        }
+
+        function renderChat() {
+             const box = document.getElementById('chatBox');
+             box.innerHTML = '';
+             const chats = complaint.chat || [];
+             if (chats.length === 0) {
+                 box.innerHTML = '<div class="text-center text-muted text-sm mt-4">No messages yet.</div>';
+                 return;
+             }
+             chats.forEach(m => {
+                 const isMe = m.sender !== 'student';
+                 box.innerHTML += `
+                     <div class="chat-msg ${m.sender}">
+                        <div class="chat-msg-header">${m.name} • ${new Date(m.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div>${m.text}</div>
+                     </div>
+                 `;
+             });
+             box.scrollTop = box.scrollHeight;
+        }
+
+        function handleChatEnter(e) { if(e.key === 'Enter') sendChat(); }
+        
+        function sendChat() {
+            const input = document.getElementById('msgInput');
+            const txt = input.value.trim();
+            if (!txt) return;
+            addChatMessage(complaintId, txt);
+            input.value = '';
+            complaint = getComplaintById(complaintId);
+            renderChat();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

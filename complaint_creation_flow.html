@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Complaint - HostelCare</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Content (Full screen flow with simple back button header) -->
+        <main class="main-content" style="max-width: 800px; margin: 0 auto;">
+            <div class="header">
+                <button class="btn btn-secondary" onclick="goBackOrHome()">← Exit Draft</button>
+                <div class="user-profile">
+                    <div class="avatar">ST</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <!-- Step Tracker -->
+                <div class="progress-tracker">
+                    <div class="progress-step active" id="step1Indicator">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Category</span>
+                    </div>
+                    <div class="progress-step" id="step2Indicator">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Details</span>
+                    </div>
+                </div>
+
+                <!-- STEP 1 -->
+                <div id="step1">
+                    <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; text-align: center;">What kind of issue are you facing?</h2>
+                    <p class="text-muted text-center text-sm mb-6">Select a category below to help us route your request quickly.</p>
+                    
+                    <div class="search-bar-container w-full mb-6" style="max-width: 100%;">
+                        <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" class="form-control" placeholder="Search for categories..." onkeyup="filterCategories(event)">
+                    </div>
+
+                    <div class="category-grid" id="categoryGrid">
+                        <!-- Items rendered by JS -->
+                    </div>
+
+                    <div class="mt-6 flex" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btnNext" disabled onclick="goToStep2()">Next Step →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <form id="step2" style="display: none;" onsubmit="submitComplaint(event)">
+                    <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Provide details for <span id="selectedCatText" style="color: var(--primary);"></span></h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <select id="location" class="form-control" required>
+                            <option value="">Select Location</option>
+                            <option value="My Room">My Room</option>
+                            <option value="Common Area">Common Area</option>
+                            <option value="Washroom">Washroom</option>
+                            <option value="Corridor">Corridor</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label flex justify-between">
+                            <span>Description</span>
+                            <span class="text-muted text-sm" id="charCount">0/500</span>
+                        </label>
+                        <textarea id="description" class="form-control" placeholder="Please describe the issue in detail..." onkeyup="updateCharCount()" maxlength="500" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Urgency</label>
+                        <div class="flex gap-4">
+                            <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
+                                <input type="radio" name="urgency" value="Mild" required> Mild
+                            </label>
+                            <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
+                                <input type="radio" name="urgency" value="Normal" checked> Normal
+                            </label>
+                            <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
+                                <input type="radio" name="urgency" value="Extreme"> <span style="color: var(--danger); font-weight: 500;">Extreme</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Attach Image (Optional)</label>
+                        <input type="file" id="imagefile" class="form-control" accept="image/*" style="padding-top: 0.4rem;" onchange="previewImage(event)">
+                        <img id="imgPreview" src="" style="display: none; width: 100px; height: 100px; object-fit: cover; border-radius: var(--radius-md); margin-top: 1rem; border: 1px solid var(--border-color);">
+                    </div>
+
+                    <div class="flex gap-4 mt-6">
+                        <button type="button" class="btn btn-secondary w-full" onclick="goToStep1()">← Back</button>
+                        <button type="submit" class="btn btn-primary w-full">Submit Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        requireAuth(['student']);
+        const user = getCurrentUser();
+
+        let selectedCategory = null;
+        
+        const categories = [
+            { id: 'electrical', icon: '⚡', name: 'Electrical' },
+            { id: 'plumbing', icon: '🚰', name: 'Plumbing' },
+            { id: 'water', icon: '💧', name: 'Water' },
+            { id: 'housekeeping', icon: '🧹', name: 'Housekeeping' },
+            { id: 'furniture', icon: '🪑', name: 'Furniture' },
+            { id: 'internet', icon: '📶', name: 'Internet' },
+            { id: 'other', icon: '❓', name: 'Other' }
+        ];
+
+        function renderCategories(list) {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = '';
+            list.forEach(c => {
+                const isSel = selectedCategory === c.name ? 'selected' : '';
+                grid.innerHTML += `
+                    <div class="category-card ${isSel}" onclick="selectCategory('${c.name}')">
+                        <div class="category-icon">${c.icon}</div>
+                        <div class="font-medium">${c.name}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterCategories(e) {
+            const val = e.target.value.toLowerCase();
+            const filtered = categories.filter(c => c.name.toLowerCase().includes(val));
+            renderCategories(filtered);
+        }
+
+        function selectCategory(name) {
+            selectedCategory = name;
+            renderCategories(categories);
+            document.getElementById('btnNext').disabled = false;
+        }
+
+        function goToStep2() {
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('step1Indicator').classList.add('completed');
+            document.getElementById('step2Indicator').classList.add('active');
+            document.getElementById('selectedCatText').textContent = selectedCategory;
+        }
+
+        function goToStep1() {
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step1').style.display = 'block';
+            document.getElementById('step1Indicator').classList.remove('completed');
+            document.getElementById('step2Indicator').classList.remove('active');
+        }
+
+        function updateCharCount() {
+            const len = document.getElementById('description').value.length;
+            document.getElementById('charCount').textContent = `${len}/500`;
+        }
+
+        function previewImage(e) {
+            const preview = document.getElementById('imgPreview');
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    preview.src = evt.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        }
+
+        function submitComplaint(e) {
+            e.preventDefault();
+            
+            const locationSelect = document.getElementById('location').value;
+            const fullLocation = locationSelect === 'My Room' ? `Room ${user.roomNo || 'Unknown'}` : locationSelect;
+            const desc = document.getElementById('description').value;
+            const urgency = document.querySelector('input[name="urgency"]:checked').value;
+            
+            const newId = 'CMP-' + Math.floor(1000 + Math.random() * 9000);
+            
+            const imgSrc = document.getElementById('imgPreview').src;
+
+            const newComplaint = {
+                id: newId,
+                title: `${selectedCategory} Issue in ${fullLocation}`,
+                description: desc,
+                category: selectedCategory,
+                location: fullLocation,
+                urgency: urgency,
+                status: 'Submitted',
+                date: new Date().toISOString(),
+                studentId: user.id,
+                studentName: user.name,
+                roomNo: user.roomNo,
+                image: document.getElementById('imgPreview').style.display === 'block' ? imgSrc : null,
+                assignedStaff: null,
+                timeline: [
+                    { status: 'Submitted', date: new Date().toISOString(), note: 'Complaint officially filed.' }
+                ],
+                chat: []
+            };
+
+            saveComplaint(newComplaint);
+            
+            alert('Success! Your complaint has been submitted.');
+            window.location.href = 'complaint_tracking.html';
+        }
+
+        function goBackOrHome() {
+            window.location.href = 'student_dashboard.html';
+        }
+
+        // Init Step 1
+        renderCategories(categories);
+    </script>
+</body>
+</html>

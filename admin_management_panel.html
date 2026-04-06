@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - HostelCare</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .th-checkbox { width: 40px; }
+        .bulk-actions-panel { background: rgba(108, 92, 231, 0.1); border: 1px solid var(--primary); border-radius: var(--radius-md); padding: 1rem; display: none; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">HostelCare <span style="font-size: 0.75rem; color: var(--danger); font-weight: normal; margin-left: 0.5rem;">ADMIN</span></div>
+            
+            <div style="margin-bottom: 2rem;">
+                <div class="text-xs font-medium text-muted mb-2 px-4" style="text-transform: uppercase;">Menu</div>
+                <a href="admin_management_panel.html" class="nav-link active">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    Complaints
+                </a>
+                <a href="admin_analytics_dashboard.html" class="nav-link">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Reports (Data)
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Student DB Opened')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"></path></svg>
+                    Students
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Staff DB Opened')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    Staff
+                </a>
+                <a href="#" class="nav-link" onclick="alert('Settings Opened')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0..."></path></svg>
+                    Settings
+                </a>
+            </div>
+
+            <div style="margin-top: auto;">
+                <button class="nav-link" style="width: 100%; border: none; background: transparent; text-align: left; color: var(--danger);" onclick="logout()">
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="background: var(--bg-color);">
+            <div class="header">
+                <div>
+                    <h1>Management Panel</h1>
+                    <p class="text-muted text-sm mt-1">Supervise operations, assign tickets, manage system records.</p>
+                </div>
+                <div class="flex gap-4">
+                    <button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
+                    <button class="btn btn-primary" onclick="alert('Create manual ticket')">+ New Task</button>
+                    <div class="avatar" style="background-color: var(--danger);">AD</div>
+                </div>
+            </div>
+
+            <div class="grid-cards">
+                <div class="card stat-card">
+                    <span class="stat-title">Total Open</span>
+                    <span class="stat-value" id="totOpen">0</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-title">Pending Assignment</span>
+                    <span class="stat-value" style="color: var(--warning);" id="pendAssgn">0</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-title">Extreme Priority</span>
+                    <span class="stat-value" style="color: var(--danger);" id="extPri">0</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-title">Resolved Today</span>
+                    <span class="stat-value" style="color: var(--success);">5</span>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Panel (Hidden by default) -->
+            <div class="bulk-actions-panel" id="bulkPanel">
+                <div>
+                    <span class="font-medium" id="selectedCountMsg">2 items selected</span>
+                </div>
+                <div class="flex gap-2">
+                    <select class="form-control" style="width: auto;" id="bulkStaffSelect">
+                        <option value="">-- Assign Staff --</option>
+                        <option value="Mike Smith">Mike Smith (Plumbing)</option>
+                        <option value="Dave Carpenter">Dave Carpenter (Furn.)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="applyBulkAssign()">Assign</button>
+                    <div style="width: 1px; background: var(--border-color); margin: 0 0.5rem;"></div>
+                    <button class="btn btn-secondary text-danger" onclick="alert('Deleting items...')">Delete</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="flex justify-between align-center mb-6" style="flex-wrap: wrap; gap: 1rem;">
+                    <div class="search-bar-container" style="flex: 1; min-width: 200px;">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by ID, Student, Room..." onkeyup="filterData()" style="padding-left: 1rem;">
+                    </div>
+                    <div class="flex gap-2">
+                        <select class="form-control" id="statusFilter" onchange="filterData()" style="width: auto;">
+                            <option value="All">All Statuses</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Assigned">Assigned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                        <select class="form-control" id="urgencyFilter" onchange="filterData()" style="width: auto;">
+                            <option value="All">All Urgencies</option>
+                            <option value="Extreme">Extreme</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Mild">Mild</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="th-checkbox"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                                <th>ID</th>
+                                <th>Student</th>
+                                <th>Category</th>
+                                <th>Urgency</th>
+                                <th>Assigned To</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="managementTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="flex justify-between align-center mt-4">
+                    <div class="text-sm text-muted">Showing all matching records (Pagination simulated)</div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-secondary disabled" style="opacity: 0.5;">Previous</button>
+                        <button class="btn btn-secondary disabled" style="opacity: 0.5;">Next</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Insights Bottom Row -->
+            <div class="details-grid">
+                <div class="card flex" style="align-items: center; gap: 1.5rem;">
+                    <div class="map-preview" style="width: 150px; height: 100px;"></div>
+                    <div>
+                        <h3 class="font-medium mb-1">Assignment Heatmap</h3>
+                        <p class="text-sm text-muted mb-2">Block A has 60% of current high-priority assignments.</p>
+                        <a href="#" class="text-sm" style="color: var(--primary);" onclick="alert('Expanding heatmap module')">View Large Map →</a>
+                    </div>
+                </div>
+                <div class="card flex" style="align-items: center; gap: 1.5rem;">
+                    <div style="font-size: 2.5rem;">⏱️</div>
+                    <div>
+                        <h3 class="font-medium mb-1">Avg Response Time</h3>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">2h 15m</div>
+                        <p class="text-xs text-muted">↓ 12% from last month</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        requireAuth(['admin']);
+        let allComplaints = [];
+
+        function loadData() {
+            allComplaints = getComplaints();
+            
+            // Stats
+            document.getElementById('totOpen').textContent = allComplaints.filter(c => c.status !== 'Resolved').length;
+            document.getElementById('pendAssgn').textContent = allComplaints.filter(c => !c.assignedStaff && c.status !== 'Resolved').length;
+            document.getElementById('extPri').textContent = allComplaints.filter(c => c.urgency === 'Extreme' && c.status !== 'Resolved').length;
+            
+            renderTable(allComplaints);
+        }
+
+        function filterData() {
+            const uStat = document.getElementById('urgencyFilter').value;
+            const sStat = document.getElementById('statusFilter').value;
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = allComplaints;
+            if (term) filtered = filtered.filter(c => c.id.toLowerCase().includes(term) || c.studentName.toLowerCase().includes(term) || c.roomNo.toLowerCase().includes(term));
+            if (uStat !== 'All') filtered = filtered.filter(c => c.urgency === uStat);
+            if (sStat !== 'All') filtered = filtered.filter(c => c.status === sStat);
+            
+            renderTable(filtered);
+            checkBulkPanel(); // Reset panel
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('managementTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-6">No complaints found.</td></tr>';
+                return;
+            }
+
+            data.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="row-checkbox" value="${c.id}" onchange="checkBulkPanel()"></td>
+                    <td class="font-medium" style="color: var(--primary); cursor: pointer;" onclick="viewDetails('${c.id}')">${c.id}</td>
+                    <td>
+                        <div class="font-medium">${c.studentName}</div>
+                        <div class="text-xs text-muted">${c.roomNo}</div>
+                    </td>
+                    <td>${c.category}</td>
+                    <td>${getUrgencyBadge(c.urgency)}</td>
+                    <td>${c.assignedStaff ? c.assignedStaff.name : '<span class="badge" style="background:var(--border-color)">Unassigned</span>'}</td>
+                    <td>${getStatusBadge(c.status)}</td>
+                    <td>${formatDate(c.date).split(',')[0]}</td>
+                    <td>
+                        <button class="btn btn-secondary text-sm" style="padding: 0.25rem 0.5rem;" onclick="viewDetails('${c.id}')">Action</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function viewDetails(id) {
+            window.location.href = `complaint_details_staff.html?id=${id}`;
+        }
+
+        // Bulk Actions Logic
+        function toggleSelectAll(checkbox) {
+            const rows = document.querySelectorAll('.row-checkbox');
+            rows.forEach(r => r.checked = checkbox.checked);
+            checkBulkPanel();
+        }
+
+        function checkBulkPanel() {
+            const checked = document.querySelectorAll('.row-checkbox:checked');
+            const panel = document.getElementById('bulkPanel');
+            if (checked.length > 0) {
+                document.getElementById('selectedCountMsg').textContent = `${checked.length} items selected`;
+                panel.style.display = 'flex';
+            } else {
+                panel.style.display = 'none';
+                document.getElementById('selectAll').checked = false;
+            }
+        }
+
+        function applyBulkAssign() {
+            const staffName = document.getElementById('bulkStaffSelect').value;
+            if(!staffName) return alert('Select staff member first.');
+            
+            const checked = document.querySelectorAll('.row-checkbox:checked');
+            checked.forEach(cb => {
+                const id = cb.value;
+                const c = getComplaintById(id);
+                if (c) {
+                    c.assignedStaff = { name: staffName, role: 'Maintenance Staff', phone: '12345', rating: 'N/A' };
+                    if (c.status === 'Submitted') c.status = 'Assigned';
+                    saveComplaint(c);
+                    addTimelineEvent(id, c.status, `Assigned to ${staffName} via Admin Bulk Action.`);
+                }
+            });
+            alert('Bulk assignment successful!');
+            loadData();
+            checkBulkPanel();
+        }
+
+        function exportCSV() {
+            alert('Exporting data as CSV (Simulated). A download normally starts here.');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

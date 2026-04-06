@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Details - HostelCare</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar placeholder if needed, but going with a direct full page or minimal top nav approach based on context. 
+             Since this is accessed from multiple places, we'll give it a unified top bar instead. -->
+        <main class="main-content" style="max-width: 1000px; margin: 0 auto;">
+            <div class="header" style="margin-bottom: 1rem;">
+                <button class="btn btn-secondary" onclick="goBack()">
+                    ← Back to List
+                </button>
+            </div>
+
+            <div class="details-grid">
+                <!-- Left Column: Details -->
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm font-medium text-muted" id="categoryBadge">Category</span>
+                        <span id="dateText" class="text-sm text-muted">Date</span>
+                    </div>
+                    
+                    <h1 id="complaintTitle" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Loading...</h1>
+                    
+                    <div class="mb-6">
+                        <h3 class="form-label">Description</h3>
+                        <p id="complaintDesc" style="white-space: pre-wrap; color: var(--text-main); font-size: 0.95rem;"></p>
+                    </div>
+
+                    <div id="imageContainer" style="display: none;" class="mb-6">
+                        <h3 class="form-label">Attached Evidence</h3>
+                        <img id="complaintImage" src="" alt="Complaint Evidence" class="complaint-image">
+                    </div>
+                    
+                    <div class="mt-6" style="padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                        <h3 class="form-label mb-4">Student Details</h3>
+                        <div class="flex gap-4 items-center">
+                            <div class="avatar" style="width: 48px; height: 48px;" id="studentAvatar">S</div>
+                            <div>
+                                <div style="font-weight: 600;" id="studentName">Name</div>
+                                <div class="text-sm text-muted" id="studentDetails">Room | ID</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Status & Resolution -->
+                <div class="card">
+                    <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1.5rem;">Status Management</h2>
+                    
+                    <form id="resolutionForm" onsubmit="updateComplaint(event)">
+                        <div class="form-group" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;" id="currentBadges">
+                            <!-- Badges will populate here -->
+                        </div>
+
+                        <div id="editableControls" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Change Status</label>
+                                <select id="statusSelect" class="form-control">
+                                    <option value="Pending">Pending</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Resolved">Resolved</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Change Priority</label>
+                                <select id="prioritySelect" class="form-control">
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-full mt-4">Save Changes</button>
+                        </div>
+                        
+                        <div id="readOnlyMessage" style="display: none;" class="mt-4">
+                            <div style="padding: 1rem; background: var(--secondary-bg); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-muted);">
+                                You do not have permission to change the status or priority of this complaint.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Check Auth
+        requireAuth();
+        const user = getCurrentUser();
+
+        // Get params
+        const urlParams = new URLSearchParams(window.location.search);
+        const source = urlParams.get('source') || 'student_dashboard'; // fallback
+        const complaintId = urlParams.get('id');
+
+        // Navigation logic: Back button
+        function goBack() {
+            if(source === 'student') window.location.href = 'complaint_tracking.html';
+            else if(source === 'staff') window.location.href = 'staff_dashboard.html';
+            else if(source === 'admin') window.location.href = 'admin_management_panel.html';
+            else window.location.href = 'index.html';
+        }
+
+        let currentComplaint = null;
+
+        function loadData() {
+            if (!complaintId) {
+                alert("No complaint ID provided.");
+                goBack();
+                return;
+            }
+
+            currentComplaint = getComplaintById(complaintId);
+            if(!currentComplaint) {
+                alert("Complaint not found.");
+                goBack();
+                return;
+            }
+
+            // Populate UI
+            document.getElementById('complaintTitle').textContent = currentComplaint.title;
+            document.getElementById('complaintDesc').textContent = currentComplaint.description;
+            document.getElementById('categoryBadge').textContent = currentComplaint.category.toUpperCase();
+            document.getElementById('dateText').textContent = 'Reported on ' + formatDate(currentComplaint.date);
+            
+            document.getElementById('studentName').textContent = currentComplaint.studentName;
+            document.getElementById('studentAvatar').textContent = currentComplaint.studentName.charAt(0);
+            document.getElementById('studentDetails').textContent = `Room ${currentComplaint.roomNo} | ID: ${currentComplaint.studentId}`;
+            
+            if (currentComplaint.image) {
+                document.getElementById('imageContainer').style.display = 'block';
+                document.getElementById('complaintImage').src = currentComplaint.image;
+            }
+
+            document.getElementById('currentBadges').innerHTML = `
+                ${getStatusBadge(currentComplaint.status)}
+                ${getPriorityBadge(currentComplaint.priority)}
+            `;
+
+            // Permissions
+            if (user.role === 'staff' || user.role === 'admin') {
+                document.getElementById('editableControls').style.display = 'block';
+                document.getElementById('statusSelect').value = currentComplaint.status;
+                document.getElementById('prioritySelect').value = currentComplaint.priority;
+            } else {
+                document.getElementById('readOnlyMessage').style.display = 'block';
+            }
+        }
+
+        function updateComplaint(e) {
+            e.preventDefault();
+            
+            if (user.role !== 'staff' && user.role !== 'admin') {
+                alert("You do not have permission to edit this.");
+                return;
+            }
+
+            const newStatus = document.getElementById('statusSelect').value;
+            const newPriority = document.getElementById('prioritySelect').value;
+
+            currentComplaint.status = newStatus;
+            currentComplaint.priority = newPriority;
+
+            saveComplaint(currentComplaint);
+            alert("Complaint updated successfully!");
+            
+            // Re-render
+            loadData();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Details - Student</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body style="background-color: var(--bg-color);">
+    <div class="app-container">
+        <main class="main-content" style="max-width: 1000px; margin: 0 auto; padding-top: 2rem;">
+            
+            <!-- Header -->
+            <div class="flex justify-between align-center mb-6">
+                <div>
+                    <button class="btn btn-secondary mb-4" onclick="window.history.back()">← Back to List</button>
+                    <h1 style="font-size: 1.5rem; font-weight: 700;" id="pageTitle">Ticket #CMP-000</h1>
+                    <div class="text-sm text-muted mt-1" id="pageSubtitle">Plumbing • Reported on Dec 10, 2026</div>
+                </div>
+                <div class="flex gap-2" id="headerBadges">
+                    <!-- Badges -->
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="card mb-6" style="padding: 2rem 4rem;">
+                <div class="progress-tracker" id="progressTracker">
+                    <div class="progress-step" id="ps-Submitted">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Submitted</span>
+                    </div>
+                    <div class="progress-step" id="ps-Assigned">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Assigned</span>
+                    </div>
+                    <div class="progress-step" id="ps-InProgress">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">In Progress</span>
+                    </div>
+                    <div class="progress-step" id="ps-Resolved">
+                        <div class="step-circle">4</div>
+                        <span class="step-label">Resolved</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <!-- Left Column -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <div class="card">
+                        <h3 class="form-label" style="font-size: 1rem;">Issue Description</h3>
+                        <p id="descText" style="white-space: pre-wrap; font-size: 0.95rem; margin-top: 0.5rem;"></p>
+                        
+                        <div id="imageBox" style="display: none; margin-top: 1.5rem;">
+                            <h4 class="form-label text-sm text-muted">Attached Document / Image</h4>
+                            <img id="complaintImg" src="" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        </div>
+                    </div>
+
+                    <!-- Staff Assigned Card -->
+                    <div class="card" id="staffCardBox" style="display: none;">
+                        <h3 class="form-label" style="font-size: 1rem; margin-bottom: 1rem;">Assigned Staff</h3>
+                        <div class="assigned-staff-card">
+                            <div class="avatar" id="staffAvatar"></div>
+                            <div style="flex: 1;">
+                                <div class="font-medium" id="staffName" style="font-size: 1rem;">Name</div>
+                                <div class="text-sm text-muted" id="staffRole">Role</div>
+                                <div class="text-sm" style="color: var(--warning); font-weight: 500;" id="staffRating">⭐ 0.0/5</div>
+                            </div>
+                            <button class="btn btn-primary" id="btnCallStaff">Call Staff</button>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="card">
+                        <h3 class="form-label" style="font-size: 1rem; margin-bottom: 1.5rem;">Activity History</h3>
+                        <div class="timeline" id="timelineList">
+                            <!-- Populated JS -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback (Only if resolved) -->
+                    <div class="card" id="feedbackBox" style="background: rgba(34, 197, 94, 0.1); border-color: var(--success); display: none;">
+                        <h3 class="form-label text-success" style="color: var(--success); font-size: 1.125rem;">Issue Resolved!</h3>
+                        <p class="text-sm text-muted mb-4">How was your experience solving this complaint?</p>
+                        <div class="flex gap-2">
+                            <button class="btn btn-primary" onclick="alert('Feedback submitted: Great')">👍 Fixed well!</button>
+                            <button class="btn btn-secondary" onclick="alert('Feedback submitted: Issues')">👎 Still having issues</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Chat -->
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <h3 class="form-label" style="font-size: 1rem; margin-bottom: 1rem;">Support Chat</h3>
+                    <p class="text-xs text-muted mb-4">Communicate directly with the assigned staff member or admin.</p>
+                    
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatBox">
+                            <!-- Chat items JS -->
+                        </div>
+                        <div class="chat-input-area border-t pt-3 mt-auto">
+                            <input type="text" class="form-control" placeholder="Type a message..." id="msgInput" onkeypress="handleChatEnter(event)">
+                            <button class="btn btn-primary" onclick="sendChat()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        requireAuth(['student']);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const complaintId = urlParams.get('id');
+        let complaint = null;
+
+        function loadData() {
+            if (!complaintId) { alert("Missing ID"); window.location.href = 'complaint_tracking.html'; return; }
+            complaint = getComplaintById(complaintId);
+            if (!complaint) { alert("Complaint not found."); window.location.href = 'complaint_tracking.html'; return; }
+
+            // Header
+            document.getElementById('pageTitle').textContent = `Ticket #${complaint.id}`;
+            document.getElementById('pageSubtitle').textContent = `${complaint.category} • Reported on ${formatDate(complaint.date)}`;
+            document.getElementById('headerBadges').innerHTML = `
+                ${getStatusBadge(complaint.status)}
+                ${getUrgencyBadge(complaint.urgency)}
+            `;
+
+            // Description & Image
+            document.getElementById('descText').textContent = complaint.description;
+            if (complaint.image) {
+                document.getElementById('imageBox').style.display = 'block';
+                document.getElementById('complaintImg').src = complaint.image;
+            }
+
+            // Progress Tracker Check
+            const statuses = ['Submitted', 'Assigned', 'In Progress', 'Resolved'];
+            let reached = false;
+            // Iterate backwards to find current status level to light everything up
+            const curIdx = statuses.indexOf(complaint.status) !== -1 ? statuses.indexOf(complaint.status) : 0;
+            statuses.forEach((s, idx) => {
+                const stepEl = document.getElementById(`ps-${s.replace(' ', '')}`);
+                if (idx < curIdx) {
+                    stepEl.classList.add('completed');
+                } else if (idx === curIdx) {
+                    stepEl.classList.add('active');
+                    if (s === 'Resolved') stepEl.classList.add('completed');
+                }
+            });
+
+            // Staff Card
+            if (complaint.assignedStaff && (complaint.status === 'Assigned' || complaint.status === 'In Progress' || complaint.status === 'Resolved')) {
+                document.getElementById('staffCardBox').style.display = 'block';
+                document.getElementById('staffAvatar').textContent = complaint.assignedStaff.name.charAt(0);
+                document.getElementById('staffName').textContent = complaint.assignedStaff.name;
+                document.getElementById('staffRole').textContent = complaint.assignedStaff.role;
+                document.getElementById('staffRating').textContent = `⭐ ${complaint.assignedStaff.rating}`;
+                document.getElementById('btnCallStaff').onclick = () => alert(`Calling ${complaint.assignedStaff.phone}`);
+            }
+
+            // Outline
+            const tBody = document.getElementById('timelineList');
+            tBody.innerHTML = '';
+            (complaint.timeline || []).forEach(t => {
+                tBody.innerHTML += `
+                    <div class="timeline-item">
+                        <div class="timeline-date">${formatDate(t.date)}</div>
+                        <div class="timeline-content"><span class="font-medium">${t.status}</span> - ${t.note}</div>
+                    </div>
+                `;
+            });
+
+            // Feedback
+            if (complaint.status === 'Resolved') {
+                document.getElementById('feedbackBox').style.display = 'block';
+                document.querySelector('.chat-input-area').style.display = 'none'; // lock chat
+            }
+
+            // Chat
+            renderChat();
+        }
+
+        function renderChat() {
+             const box = document.getElementById('chatBox');
+             box.innerHTML = '';
+             const chats = complaint.chat || [];
+             if (chats.length === 0) {
+                 box.innerHTML = '<div class="text-center text-muted text-sm mt-4">No messages yet.</div>';
+                 return;
+             }
+             chats.forEach(m => {
+                 const isMe = m.sender === 'student';
+                 box.innerHTML += `
+                     <div class="chat-msg ${m.sender}">
+                        <div class="chat-msg-header">${m.name} • ${new Date(m.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div>${m.text}</div>
+                     </div>
+                 `;
+             });
+             box.scrollTop = box.scrollHeight;
+        }
+
+        function handleChatEnter(e) {
+            if(e.key === 'Enter') sendChat();
+        }
+
+        function sendChat() {
+            const input = document.getElementById('msgInput');
+            const txt = input.value.trim();
+            if (!txt) return;
+            
+            addChatMessage(complaintId, txt); // Saves to localStorage
+            input.value = '';
+            
+            // Reload local object to re-render
+            complaint = getComplaintById(complaintId);
+            renderChat();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
