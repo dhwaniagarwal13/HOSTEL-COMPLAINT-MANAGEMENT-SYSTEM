@@ -78,7 +78,6 @@ export default function ComplaintCreation() {
             deadlineDate.setHours(deadlineDate.getHours() + hoursToAdd);
 
             const complaintData = {
-                user_id: user.id,
                 title: subCat ? `${category} - ${subCat}` : category,
                 description: `Location: ${location}\n\n${desc}`,
                 category: category,

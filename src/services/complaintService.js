@@ -21,9 +21,21 @@ export const uploadImage = async (file) => {
 };
 
 export const createComplaint = async (complaintData) => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("User not authenticated");
+    }
+
+    console.log("User:", user);
+    console.log("User ID:", user?.id);
+
     const { data, error } = await supabase
         .from('complaints')
-        .insert([complaintData])
+        .insert([{
+            ...complaintData,
+            user_id: user.id
+        }])
         .select();
 
     if (error) {

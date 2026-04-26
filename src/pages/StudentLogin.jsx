@@ -18,12 +18,14 @@ export default function StudentLogin() {
     useEffect(() => {
         if (user && profile) {
             const role = profile.role;
-            if (['staff', 'supervisor', 'warden'].includes(role)) {
-                navigate("/staff");
-            } else if (role === 'admin') {
-                navigate("/admin");
-            } else if (role === 'student') {
-                navigate("/dashboard");
+            if (role === 'student') {
+                navigate('/student-dashboard');
+            } else if (role === 'staff') {
+                navigate('/staff-dashboard');
+            } else if (role === 'supervisor') {
+                navigate('/supervisor-dashboard');
+            } else if (role === 'warden') {
+                navigate('/warden-dashboard');
             }
         }
     }, [user, profile, navigate]);
@@ -48,12 +50,14 @@ export default function StudentLogin() {
                 }
 
                 const role = userProfile.role;
-                if (['staff', 'supervisor', 'warden'].includes(role)) {
-                    navigate("/staff");
-                } else if (role === 'admin') {
-                    navigate("/admin");
-                } else if (role === 'student') {
-                    navigate("/dashboard");
+                if (role === 'student') {
+                    navigate('/student-dashboard');
+                } else if (role === 'staff') {
+                    navigate('/staff-dashboard');
+                } else if (role === 'supervisor') {
+                    navigate('/supervisor-dashboard');
+                } else if (role === 'warden') {
+                    navigate('/warden-dashboard');
                 } else {
                     alert("Invalid role detected.");
                 }

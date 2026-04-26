@@ -51,11 +51,12 @@ export const signUp = async (email, password, userData) => {
     if (error) throw error;
 
     if (data.user) {
-        const { error: dbError } = await supabase.from('users').upsert({
+        const { error: dbError } = await supabase.from('users').insert([{
             id: data.user.id,
+            name: userData.name,
             email: email,
-            ...userData
-        });
+            role: userData.role
+        }]);
         if (dbError) throw dbError;
     }
 

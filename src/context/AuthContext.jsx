@@ -34,10 +34,6 @@ export function AuthProvider({ children }) {
 
                 const currentUser = session?.user || null;
                 setUser(currentUser);
-                
-                // CRITICAL: Set loading to false immediately after getting the user
-                // This stops the "Loading..." screen from hanging
-                setLoading(false);
 
                 if (currentUser) {
                     const { data: prof } = await supabase
@@ -47,6 +43,8 @@ export function AuthProvider({ children }) {
                         .maybeSingle();
                     if (mounted) setProfile(prof);
                 }
+                
+                if (mounted) setLoading(false);
             } catch (error) {
                 console.error("Auth init error:", error);
                 if (mounted) setLoading(false);
@@ -62,10 +60,12 @@ export function AuthProvider({ children }) {
             setUser(currentUser);
 
             if (currentUser) {
-                // Background fetch, don't block
                 supabase.from('users').select('*').eq('id', currentUser.id).maybeSingle()
                     .then(({ data: prof }) => {
-                        if (mounted) setProfile(prof);
+                        if (mounted) {
+                            setProfile(prof);
+                            setLoading(false);
+                        }
                     });
             } else {
                 setProfile(null);
