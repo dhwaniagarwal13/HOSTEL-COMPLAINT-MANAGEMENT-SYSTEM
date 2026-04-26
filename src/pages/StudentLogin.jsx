@@ -3,24 +3,26 @@ import { useNavigate, Link } from 'react-router-dom';
 import { HOSTEL_LIST } from '../utils/data';
 import { login } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function StudentLogin() {
     const navigate = useNavigate();
     const [loginType, setLoginType] = useState('student');
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
-    const [hostel, setHostel] = useState('');
+    const [hostel, setHostel] = useState(HOSTEL_LIST[0]);
     const [showPass, setShowPass] = useState(false);
     const [loading, setLoading] = useState(false);
     const { user, profile } = useAuth();
 
     useEffect(() => {
         if (user && profile) {
-            if (profile.role === 'staff') {
+            const role = profile.role;
+            if (['staff', 'supervisor', 'warden'].includes(role)) {
                 navigate("/staff");
-            } else if (profile.role === 'admin') {
+            } else if (role === 'admin') {
                 navigate("/admin");
-            } else {
+            } else if (role === 'student') {
                 navigate("/dashboard");
             }
         }
@@ -30,13 +32,31 @@ export default function StudentLogin() {
         e.preventDefault();
         setLoading(true);
         try {
-            const { user, profile } = await login(userId, password);
+            const { user } = await login(userId, password);
             if (user) {
-                // If profile is still not found (e.g. sync delay), default to student dashboard
-                const role = profile?.role || 'student';
-                if (role === 'staff') navigate("/staff");
-                else if (role === 'admin') navigate("/admin");
-                else navigate("/dashboard");
+                // Fetch profile directly after login to ensure we have the role
+                const { data: userProfile, error } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error || !userProfile) {
+                    console.error("Error fetching role:", error);
+                    alert("Could not retrieve user role.");
+                    return;
+                }
+
+                const role = userProfile.role;
+                if (['staff', 'supervisor', 'warden'].includes(role)) {
+                    navigate("/staff");
+                } else if (role === 'admin') {
+                    navigate("/admin");
+                } else if (role === 'student') {
+                    navigate("/dashboard");
+                } else {
+                    alert("Invalid role detected.");
+                }
             }
         } catch (error) {
             console.error("Login failed:", error);
@@ -54,8 +74,8 @@ export default function StudentLogin() {
                 </div>
                 <div className="nav-links">
                     <Link to="/">Home</Link>
-                    <a href="#" onClick={(e) => { e.preventDefault(); alert('Opening support modal...'); }}>Support</a>
-                    <a href="#" onClick={(e) => { e.preventDefault(); alert('Redirecting to Admin Portal Info...'); }}>Contact Admin</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); alert('For support, please email support@hostel.com or contact your hostel warden.'); }}>Support</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('/directory'); }}>Contact Admin</a>
                     <button 
                         className="btn btn-secondary text-sm" 
                         onClick={() => setLoginType(loginType === 'student' ? 'staff' : 'student')}
@@ -101,7 +121,7 @@ export default function StudentLogin() {
                         <div className="form-group">
                             <div className="flex justify-between align-center mb-2">
                                 <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
-                                <a href="#" className="text-sm" onClick={(e) => { e.preventDefault(); alert('Reset link sent!'); }}>Forgot password?</a>
+                                <a href="#" className="text-sm" onClick={(e) => { e.preventDefault(); alert('Please contact admin for password reset.'); }}>Forgot password?</a>
                             </div>
                             <div style={{ position: 'relative' }}>
                                 <input 
@@ -123,25 +143,18 @@ export default function StudentLogin() {
                         </div>
 
                         {loginType === 'student' && (
-                            <div className="flex gap-4">
-                                <div className="form-group w-full">
-                                    <label className="form-label">Hostel Block</label>
-                                    <select 
-                                        className="form-control" 
-                                        value={hostel} 
-                                        onChange={(e) => setHostel(e.target.value)}
-                                        required
-                                    >
-                                        <option value="" disabled hidden>Select your hostel</option>
-                                        {HOSTEL_LIST.map((hName) => (
-                                            <option key={hName} value={hName}>{hName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="form-group w-full">
-                                    <label className="form-label">Room Number</label>
-                                    <input type="text" className="form-control" placeholder="e.g. 101" />
-                                </div>
+                            <div className="form-group">
+                                <label className="form-label">Hostel Block</label>
+                                <select 
+                                    className="form-control" 
+                                    value={hostel} 
+                                    onChange={(e) => setHostel(e.target.value)}
+                                    required
+                                >
+                                    {HOSTEL_LIST.map((hName) => (
+                                        <option key={hName} value={hName}>{hName}</option>
+                                    ))}
+                                </select>
                             </div>
                         )}
 

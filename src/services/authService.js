@@ -23,12 +23,42 @@ export const login = async (email, password) => {
     return { user: data.user, profile };
 };
 
-export const signUp = async (email, password) => {
+export const uploadProfileImage = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        throw uploadError;
+    }
+
+    const { data } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
+
+    return data.publicUrl;
+};
+
+export const signUp = async (email, password, userData) => {
     const { data, error } = await supabase.auth.signUp({
         email,
         password
     });
     if (error) throw error;
+
+    if (data.user) {
+        const { error: dbError } = await supabase.from('users').upsert({
+            id: data.user.id,
+            email: email,
+            ...userData
+        });
+        if (dbError) throw dbError;
+    }
+
     return data;
 };
 

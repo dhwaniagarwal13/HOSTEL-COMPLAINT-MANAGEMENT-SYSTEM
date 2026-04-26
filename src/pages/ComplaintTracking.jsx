@@ -1,40 +1,83 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getComplaints, formatDate } from '../utils/data';
+import { getStudentComplaints } from '../services/complaintService';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import SLATimer from '../components/SLATimer';
 
 export default function ComplaintTracking() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const [complaints, setComplaints] = useState([]);
     const [filtered, setFiltered] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     
-    // Filters
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
     const [status, setStatus] = useState('All');
+    const [sortBy, setSortBy] = useState('latest');
 
     useEffect(() => {
-        if (!user || user.role !== 'student') {
-            navigate('/login');
-            return;
+        if(!loading) {
+            if (!user) {
+                navigate('/login');
+                return;
+            }
+            fetchData();
         }
-        const all = getComplaints().filter(c => c.studentId === user.id).sort((a,b) => new Date(b.date) - new Date(a.date));
-        setComplaints(all);
-        setFiltered(all);
-    }, [navigate]);
+    }, [user, loading, navigate]);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getStudentComplaints(user.id);
+            setComplaints(data);
+            setFiltered(data);
+        } catch (e) {
+            console.error('Error fetching complaints', e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Real-time subscription
+    useEffect(() => {
+        if (!user) return;
+        const mySub = supabase
+            .channel('tracking-complaints')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints', filter: `user_id=eq.${user.id}` }, () => {
+                fetchData();
+            })
+            .subscribe();
+        return () => supabase.removeChannel(mySub);
+    }, [user]);
 
     useEffect(() => {
-        let res = complaints;
+        let res = [...complaints];
         if(search) {
             const term = search.toLowerCase();
-            res = res.filter(c => c.id.toLowerCase().includes(term) || c.category.toLowerCase().includes(term) || (c.description && c.description.toLowerCase().includes(term)));
+            res = res.filter(c => 
+                (c.id && c.id.toLowerCase().includes(term)) || 
+                (c.category && c.category.toLowerCase().includes(term)) || 
+                (c.description && c.description.toLowerCase().includes(term)) ||
+                (c.title && c.title.toLowerCase().includes(term))
+            );
         }
         if(category !== 'All') res = res.filter(c => c.category === category);
-        if(status !== 'All') res = res.filter(c => c.status === status);
+        if(status !== 'All') res = res.filter(c => c.status?.toLowerCase() === status.toLowerCase());
+        
+        res.sort((a,b) => {
+            if(sortBy === 'latest') return new Date(b.created_at) - new Date(a.created_at);
+            if(sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+            if(sortBy === 'priority') {
+                const p = { 'High': 3, 'Medium': 2, 'Low': 1 };
+                return (p[b.priority] || 0) - (p[a.priority] || 0) || new Date(b.created_at) - new Date(a.created_at);
+            }
+            return 0;
+        });
+
         setFiltered(res);
-    }, [search, category, status, complaints]);
+    }, [search, category, status, sortBy, complaints]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -42,14 +85,26 @@ export default function ComplaintTracking() {
     };
 
     const UrgencyBadge = ({ u }) => {
-        const type = u === 'Extreme' ? 'badge-extreme' : (u === 'Mild' ? 'badge-mild' : 'badge-normal');
-        return <span className={`badge ${type}`}>{u}</span>;
+        if(!u) return null;
+        const type = u === 'High' ? 'bg-red-500/20 text-red-500 border-red-500/50' : (u === 'Medium' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50' : 'bg-green-500/20 text-green-500 border-green-500/50');
+        return <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${type}`}>{u}</span>;
     };
 
     const StatusBadge = ({ s }) => {
-        const type = s === 'Resolved' ? 'badge-resolved' : (s === 'In Progress' ? 'badge-inprogress' : (s === 'Assigned' ? 'badge-assigned' : 'badge-pending'));
-        return <span className={`badge ${type}`}>{s}</span>;
+        if(!s) return null;
+        let type = 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50';
+        if(s.toLowerCase() === 'resolved') type = 'bg-green-500/20 text-green-500 border-green-500/50';
+        if(s.toLowerCase() === 'in progress' || s.toLowerCase() === 'in-progress') type = 'bg-blue-500/20 text-blue-500 border-blue-500/50';
+        if(s.toLowerCase() === 'assigned') type = 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50';
+        return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${type}`}>{s.toUpperCase()}</span>;
     };
+
+    const formatDate = (isoString) => {
+        if (!isoString) return 'N/A';
+        return new Date(isoString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+
+    if (loading || !user) return <div className="h-screen flex items-center justify-center bg-gray-900 text-white">Loading Tracker...</div>;
 
     return (
         <div className="app-container">
@@ -102,39 +157,53 @@ export default function ComplaintTracking() {
                             </select>
                             <select className="form-control" value={status} onChange={e => setStatus(e.target.value)}>
                                 <option value="All">All Statuses</option>
-                                <option value="Submitted">Submitted</option>
-                                <option value="Assigned">Assigned</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Resolved">Resolved</option>
+                                <option value="pending">Pending</option>
+                                <option value="in progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                            </select>
+                            <select className="form-control" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                                <option value="latest">Sort: Latest</option>
+                                <option value="oldest">Sort: Oldest</option>
+                                <option value="priority">Sort: Top Priority</option>
                             </select>
                         </div>
                     </div>
                     
-                    <div className="table-container">
-                        <table>
-                            <thead>
+                            <div className="table-container overflow-x-auto">
+                        <table className="min-w-full text-left text-sm whitespace-nowrap">
+                            <thead className="uppercase tracking-wider border-b border-gray-700">
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Category</th>
-                                    <th>Urgency</th>
-                                    <th>Date Submitted</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">ID</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">Category</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">Priority</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">Time Left</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">Date Submitted</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">Status</th>
+                                    <th className="px-4 py-3 font-medium text-gray-400">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.length === 0 ? (
-                                    <tr><td colSpan="6" className="text-center text-muted py-8">No complaints match the criteria.</td></tr>
+                                {isLoading ? (
+                                    <tr><td colSpan="7" className="text-center text-gray-500 py-8">Loading records...</td></tr>
+                                ) : filtered.length === 0 ? (
+                                    <tr><td colSpan="7" className="text-center text-gray-500 py-8">No complaints match the criteria.</td></tr>
                                 ) : (
                                     filtered.map(c => (
-                                        <tr key={c.id}>
-                                            <td className="font-medium" style={{ color: 'var(--primary)', cursor: 'pointer' }} onClick={() => navigate(`/details?id=${c.id}`)}>{c.id}</td>
-                                            <td>{c.category}</td>
-                                            <td><UrgencyBadge u={c.urgency} /></td>
-                                            <td>{formatDate(c.date)}</td>
-                                            <td><StatusBadge s={c.status} /></td>
-                                            <td>
-                                                <button className="btn btn-secondary text-sm" style={{ padding: '0.25rem 0.625rem' }} onClick={() => navigate(`/details?id=${c.id}`)}>Track</button>
+                                        <tr key={c.id} className="border-b border-gray-800">
+                                            <td className="px-4 py-3 font-medium text-indigo-400 cursor-pointer" onClick={() => navigate(`/details?id=${c.id}`)}>#{c.id.toString().substring(0,8)}</td>
+                                            <td className="px-4 py-3">{c.category}</td>
+                                            <td className="px-4 py-3"><UrgencyBadge u={c.priority} /></td>
+                                            <td className="px-4 py-3">
+                                                {c.status?.toLowerCase() === 'resolved' ? (
+                                                    <span className="text-green-500 text-xs font-semibold">Resolved</span>
+                                                ) : (
+                                                    <SLATimer deadline={c.deadline} />
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">{formatDate(c.created_at)}</td>
+                                            <td className="px-4 py-3"><StatusBadge s={c.status} /> {c.escalated && c.status?.toLowerCase() !== 'resolved' && <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white uppercase">Escalated</span>}</td>
+                                            <td className="px-4 py-3">
+                                                <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs transition" style={{ padding: '0.25rem 0.625rem' }} onClick={() => navigate(`/details?id=${c.id}`)}>Track</button>
                                             </td>
                                         </tr>
                                     ))

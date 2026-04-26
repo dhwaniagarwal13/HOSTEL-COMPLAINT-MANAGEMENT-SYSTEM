@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createComplaint, uploadImage } from '../services/complaintService';
+import { createComplaint, uploadImage, getStaffForCategory } from '../services/complaintService';
 import { useAuth } from '../context/AuthContext';
 import { logout } from '../services/authService';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function ComplaintCreation() {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function ComplaintCreation() {
     const [subCat, setSubCat] = useState('');
     const [location, setLocation] = useState('');
     const [desc, setDesc] = useState('');
-    const [urgency, setUrgency] = useState('Normal');
+    const [urgency, setUrgency] = useState('Medium');
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,10 +25,12 @@ export default function ComplaintCreation() {
             if (!user) {
                 navigate('/login');
             }
-            // Allow access if user exists, even if profile is still fetching
-            // We only block if profile explicitly says they ARE NOT a student
             else if (profile && profile.role !== 'student') {
-                navigate('/login');
+                navigate('/staff');
+            } else if (profile) {
+                // Auto-fill location if room and block exist
+                const autoLocation = `${profile.hostel_block || ''}${profile.room_number ? ' - Room ' + profile.room_number : ''}`;
+                setLocation(autoLocation);
             }
         }
     }, [user, profile, loading, navigate]);
@@ -50,6 +53,11 @@ export default function ComplaintCreation() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if(!user) return;
+        
+        if (!category || !location || !desc) {
+            toast.error("Please fill all required fields");
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -57,25 +65,37 @@ export default function ComplaintCreation() {
             if (imageFile) {
                 imageUrl = await uploadImage(imageFile);
             }
+            
+            // Auto-assign staff based on category
+            const staffId = await getStaffForCategory(category);
+
+            // Compute Deadline automatically based on SLA
+            let hoursToAdd = 48; // Medium default
+            if (urgency === 'High') hoursToAdd = 24;
+            else if (urgency === 'Low') hoursToAdd = 72;
+            
+            const deadlineDate = new Date();
+            deadlineDate.setHours(deadlineDate.getHours() + hoursToAdd);
 
             const complaintData = {
                 user_id: user.id,
                 title: subCat ? `${category} - ${subCat}` : category,
-                description: desc,
+                description: `Location: ${location}\n\n${desc}`,
                 category: category,
                 priority: urgency,
-                hostel: profile?.hostel_block || 'Not Specified',
-                room: location || profile?.room_no || 'Unknown',
+                hostel_block: profile?.hostel_block || 'Not Specified',
+                assigned_staff_id: staffId,
                 status: 'pending',
-                image_url: imageUrl
+                image_url: imageUrl,
+                deadline: deadlineDate.toISOString()
             };
 
             await createComplaint(complaintData);
-            alert('Complaint submitted successfully!');
-            navigate(`/tracking`);
+            toast.success('Complaint submitted successfully!');
+            setTimeout(() => navigate(`/tracking`), 1500);
         } catch (error) {
             console.error("Error creating complaint:", error);
-            alert("Failed to submit the complaint: " + error.message);
+            toast.error("Failed to submit the complaint: " + error.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -86,14 +106,15 @@ export default function ComplaintCreation() {
             await logout();
             navigate('/login');
         } catch (e) {
-            alert('Logout Error: ' + e.message);
+            toast.error('Logout Error: ' + e.message);
         }
     };
 
-    if (loading || !user) return <div style={{color: 'white', padding: '2rem'}}>Loading Session...</div>;
+    if (loading || !user) return <div className="h-screen flex items-center justify-center bg-gray-900 text-white">Loading Session...</div>;
 
     return (
-        <div className="app-container">
+        <div className="app-container text-gray-200">
+            <Toaster position="top-right" />
             <aside className="sidebar">
                 <div className="sidebar-logo">HostelCare</div>
                 <div style={{ marginBottom: '2rem' }}>
@@ -162,9 +183,9 @@ export default function ComplaintCreation() {
                                 <div className="form-group w-full">
                                     <label className="form-label">Urgency</label>
                                     <select className="form-control" value={urgency} onChange={e => setUrgency(e.target.value)}>
-                                        <option value="Mild">Mild - No rush</option>
-                                        <option value="Normal">Normal - Standard Priority</option>
-                                        <option value="Extreme">Extreme - Requires immediate attention</option>
+                                        <option value="Low">Low - No rush (+72 hrs)</option>
+                                        <option value="Medium">Medium - Standard Priority (+48 hrs)</option>
+                                        <option value="High">High - Requires immediate attention (+24 hrs)</option>
                                     </select>
                                 </div>
                             </div>
